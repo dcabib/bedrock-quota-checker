@@ -74,6 +74,30 @@ def serializable(value):
     return value
 
 
+# Display priority for Regions in the report and HTML views. us-east-1 is always
+# first, then the rest of North America, then Europe, then South America, then
+# every other geography. Within each tier Regions are ordered alphabetically.
+NORTH_AMERICA_PREFIXES = ("us-", "ca-", "mx-")
+
+
+def region_sort_key(region):
+    if region == "us-east-1":
+        return (0, region)
+    if region.startswith(NORTH_AMERICA_PREFIXES):
+        return (1, region)
+    if region.startswith("eu-"):
+        return (2, region)
+    if region.startswith("sa-"):
+        return (3, region)
+    return (4, region)
+
+
+def order_regions(regions):
+    """Order Regions by display priority: us-east-1, North America, Europe,
+    South America, then others; alphabetical within each tier."""
+    return sorted(regions, key=region_sort_key)
+
+
 def percentile(values, quantile=0.95):
     if not values:
         return None
@@ -733,9 +757,12 @@ def main():
         if response is None:
             raise RuntimeError("Could not list enabled Regions; use --regions.")
         supported = set(session.get_available_regions("bedrock"))
-        regions = sorted(r["RegionName"] for r in response["Regions"] if r["RegionName"] in supported)
+        regions = [r["RegionName"] for r in response["Regions"] if r["RegionName"] in supported]
         if not regions:
             raise RuntimeError("No enabled Regions match the Bedrock endpoints known to this SDK.")
+    # Order Regions by display priority so the HTML Overview and its Region
+    # selector lead with us-east-1, then North America, Europe, South America.
+    regions = order_regions(regions)
     report = collector.run(regions)
     name = f"bedrock-report_{report['account_id']}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ')}"
     directory = Path(args.output_dir).expanduser().resolve()/name

@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 import unittest
 
-from bedrock_access_report import Collector, analyze, merge_quotas, metric_id, metric_key, safe_csv_value, window
+from bedrock_access_report import Collector, analyze, merge_quotas, metric_id, metric_key, order_regions, safe_csv_value, window
 
 UTC = timezone.utc
 
@@ -137,6 +137,15 @@ class CollectorTests(unittest.TestCase):
         extra=c.expand_observed("us-east-1")
         self.assertTrue(extra)
         self.assertTrue(all(m["metric"]["Dimensions"]==[{"Name":"ModelId","Value":"active"}] for m in extra))
+
+    def test_regions_are_ordered_us_east_1_then_na_eu_sa_others(self):
+        sample=["ap-southeast-1","eu-west-1","sa-east-1","us-west-2","ca-central-1",
+                "us-east-1","eu-central-1","ap-northeast-1","sa-west-1","mx-central-1"]
+        self.assertEqual(order_regions(sample),
+            ["us-east-1","ca-central-1","mx-central-1","us-west-2","eu-central-1",
+             "eu-west-1","sa-east-1","sa-west-1","ap-northeast-1","ap-southeast-1"])
+        # us-east-1 always leads even when it is the only North America Region.
+        self.assertEqual(order_regions(["eu-west-1","us-east-1"])[0],"us-east-1")
 
     def test_metric_budget_is_shared_and_never_exceeded_under_concurrency(self):
         # Many threads reserving series at once must not jointly exceed --max-metrics.
