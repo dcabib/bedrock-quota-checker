@@ -28,6 +28,44 @@ All application-generated interface text, CLI messages, explanations, and docume
 
 The commands below assume a Bash or Zsh terminal. CloudShell provides a browser-based terminal and temporary credentials from your AWS console session. For local execution, use your existing AWS profile or IAM Identity Center session.
 
+## Two ways to run
+
+You can generate the report in either of two ways:
+
+- **Automatic (recommended):** run [`run.sh`](run.sh). It checks Python, creates the virtual environment, installs the dependencies, and generates the report in one step.
+- **Manual:** follow the numbered steps below to run each command yourself. Use this if you want full control over each stage or cannot run the script.
+
+Both approaches produce the same outputs.
+
+### Automatic: `run.sh`
+
+After cloning the repository (step 1 below), run:
+
+```bash
+./run.sh
+```
+
+With no arguments, the script uses defaults (`--regions us-east-1 us-west-2 --days 14 --output-dir ./reports`). Any arguments you pass are forwarded directly to the collector, so all of the options documented later in this guide work through the script:
+
+```bash
+# Inventory and quotas only
+./run.sh --regions us-east-1 --skip-usage
+
+# Specific profile, custom Regions and window
+./run.sh --profile customer-readonly --regions us-east-1 us-west-2 --days 30
+
+# Preview the collection plan
+./run.sh --regions us-east-1 --days 14 --plan
+```
+
+Optional environment overrides: `PYTHON` (interpreter, default `python3`) and `VENV` (virtual environment directory, default `.venv`). For example: `PYTHON=python3.11 ./run.sh`.
+
+On CloudShell you do not need `--profile`; the script inherits your console-session credentials. When the run finishes, the collector prints the absolute paths of the generated `report.html`, `quotas.csv`, JSON, and ZIP — see [step 4](#4-open-or-download-the-html-and-quota-file) to open or download them.
+
+To perform the steps yourself instead, continue with the manual instructions below.
+
+## Manual steps
+
 ## 1. Open your terminal and clone the repository
 
 **CloudShell:** sign in to the intended AWS account, open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/), and wait for the terminal to start.
