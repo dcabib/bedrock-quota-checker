@@ -78,27 +78,34 @@ else
 fi
 
 log "Generating report: python3 $COLLECTOR ${ARGS[*]}"
-python3 "$COLLECTOR" "${ARGS[@]}"
+# Capture the collector output while still streaming it live, so we can echo the
+# exact generated file paths back to the user at the end.
+OUTPUT_LOG="$(mktemp)"
+trap 'rm -f "$OUTPUT_LOG"' EXIT
+python3 "$COLLECTOR" "${ARGS[@]}" 2>&1 | tee "$OUTPUT_LOG"
+
+# Extract the absolute paths the collector printed (lines like "ZIP: /path/file.zip").
+HTML_PATH="$(grep -m1 '^HTML: '        "$OUTPUT_LOG" | sed 's/^HTML: //')"
+CSV_PATH="$(grep -m1 '^QUOTAS CSV: '   "$OUTPUT_LOG" | sed 's/^QUOTAS CSV: //')"
+ZIP_PATH="$(grep -m1 '^ZIP: '          "$OUTPUT_LOG" | sed 's/^ZIP: //')"
 
 # Download instructions for AWS CloudShell.
-cat <<'EOF'
-
-============================================================
- NEXT STEP — DOWNLOAD YOUR REPORT (AWS CloudShell)
-============================================================
-The collector printed the absolute paths of the generated files above (after "HTML:", "QUOTAS CSV:", and "ZIP:").
-
-To download them in CloudShell:
-  1. In the top-right corner of the CloudShell window, click "Actions".
-  2. Choose "Download file".
-  3. Paste the exact path shown above for the file you want:
-       - the "HTML:"       path for report.html
-       - the "QUOTAS CSV:" path for quotas.csv
-       - the "ZIP:"        path to download everything at once.
-  4. Click "Download".
-
-Then open report.html in your browser. It runs offline and needs no AWS credentials or web server.
-
-(On your local computer the files are already on disk at the paths shown above — just open the output directory.)
-============================================================
-EOF
+echo
+echo "============================================================"
+echo " NEXT STEP — DOWNLOAD YOUR REPORT (AWS CloudShell)"
+echo "============================================================"
+echo "Your generated files:"
+echo "  ZIP (everything): ${ZIP_PATH:-see the \"ZIP:\" line above}"
+echo "  HTML report:      ${HTML_PATH:-see the \"HTML:\" line above}"
+echo "  Quotas CSV:       ${CSV_PATH:-see the \"QUOTAS CSV:\" line above}"
+echo
+echo "To download them in CloudShell:"
+echo "  1. In the top-right corner of the CloudShell window, click \"Actions\"."
+echo "  2. Choose \"Download file\"."
+echo "  3. Paste one of the exact paths above (the ZIP downloads everything at once)."
+echo "  4. Click \"Download\"."
+echo
+echo "Then open report.html in your browser. It runs offline and needs no AWS credentials or web server."
+echo
+echo "(On your local computer the files are already on disk at the paths shown above — just open the output directory.)"
+echo "============================================================"
