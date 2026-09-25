@@ -1,0 +1,13 @@
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Generated reports
+reports/
+
+# OS metadata
+.DS_Store

@@ -198,6 +198,16 @@ python3 bedrock_access_report.py --regions us-east-1 --days 14 --plan
 
 The plan estimates the initial query workload. Identifiers with observed activity can require additional metric queries during a full run.
 
+### Collect several Regions in parallel
+
+The collector queries Regions concurrently. By default it processes up to 4 Regions at a time; the global collection budgets (`--max-metrics`, `--max-datapoints`, `--max-metric-requests`) are shared across all Regions, so total cost stays capped regardless of parallelism.
+
+```bash
+python3 bedrock_access_report.py --all-enabled-regions --region-workers 6
+```
+
+Use `--region-workers 1` to collect Regions one at a time (the previous behavior). Higher values are faster but increase the risk of AWS API throttling.
+
 ### View a 30-day trend
 
 ```bash
@@ -222,7 +232,7 @@ This regenerates HTML, CSV, and ZIP outputs from the saved snapshot. It refreshe
 python3 bedrock_access_report.py --help
 ```
 
-Additional options include explicit `--start` and `--end` timestamps, `--model-ids`, and collection limits through `--max-metrics`, `--max-datapoints`, and `--max-metric-requests`. `--all-enabled-regions` additionally requires `ec2:DescribeRegions`.
+Additional options include explicit `--start` and `--end` timestamps, `--model-ids`, `--region-workers` for parallel Region collection, and collection limits through `--max-metrics`, `--max-datapoints`, and `--max-metric-requests`. `--all-enabled-regions` additionally requires `ec2:DescribeRegions`.
 
 ## How to interpret the results
 

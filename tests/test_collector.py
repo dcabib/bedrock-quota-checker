@@ -11,7 +11,8 @@ UTC = timezone.utc
 def args(**updates):
     values = dict(profile="default", days=14, start=None, end=None, period="auto",
                   skip_usage=False, plan=False, max_metric_requests=200,
-                  max_datapoints=2000000, max_metrics=3000, model_ids=None)
+                  max_datapoints=2000000, max_metrics=3000, model_ids=None,
+                  region_workers=4)
     return argparse.Namespace(**dict(values, **updates))
 
 
@@ -136,6 +137,35 @@ class CollectorTests(unittest.TestCase):
         extra=c.expand_observed("us-east-1")
         self.assertTrue(extra)
         self.assertTrue(all(m["metric"]["Dimensions"]==[{"Name":"ModelId","Value":"active"}] for m in extra))
+
+    def test_metric_budget_is_shared_and_never_exceeded_under_concurrency(self):
+        # Many threads reserving series at once must not jointly exceed --max-metrics.
+        import threading
+        c=Collector(None,args(max_metrics=100),datetime.now(UTC),datetime.now(UTC),60)
+        def worker():
+            for _ in range(50):
+                c.reserve_metrics([{"id":object()}])
+        threads=[threading.Thread(target=worker) for _ in range(8)]
+        for t in threads: t.start()
+        for t in threads: t.join()
+        self.assertEqual(len(c.report["metrics"]),100)
+
+    def test_metric_request_budget_is_atomic_under_concurrency(self):
+        import threading
+        c=Collector(None,args(max_metric_requests=100),datetime.now(UTC),datetime.now(UTC),60)
+        granted=[]
+        lock=threading.Lock()
+        def worker():
+            count=0
+            for _ in range(50):
+                if c.reserve_metric_request():
+                    count+=1
+            with lock: granted.append(count)
+        threads=[threading.Thread(target=worker) for _ in range(8)]
+        for t in threads: t.start()
+        for t in threads: t.join()
+        self.assertEqual(sum(granted),100)
+        self.assertEqual(c.metric_calls,100)
 
 
 if __name__ == "__main__":
