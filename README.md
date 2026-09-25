@@ -39,13 +39,14 @@ Both approaches produce the same outputs.
 
 ### Automatic: `run.sh`
 
-After cloning the repository (step 1 below), run:
+After cloning the repository (step 1 below), make the script executable, then run it:
 
 ```bash
+chmod ugo+x run.sh
 ./run.sh
 ```
 
-With no arguments, the script uses defaults (`--regions us-east-1 us-west-2 --days 14 --output-dir ./reports`). Any arguments you pass are forwarded directly to the collector, so all of the options documented later in this guide work through the script:
+With no arguments, the script uses defaults (`--all-enabled-regions --days 14 --output-dir ./reports`), which discovers every enabled Region and requires the `ec2:DescribeRegions` permission. Any arguments you pass are forwarded directly to the collector and replace the defaults, so all of the options documented later in this guide work through the script:
 
 ```bash
 # Inventory and quotas only

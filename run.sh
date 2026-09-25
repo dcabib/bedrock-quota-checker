@@ -34,7 +34,8 @@ VENV="${VENV:-.venv}"
 COLLECTOR="bedrock_access_report.py"
 
 # Default collector arguments, used only when none are provided on the command line.
-DEFAULT_ARGS=(--regions us-east-1 us-west-2 --days 14 --output-dir ./reports)
+# --all-enabled-regions discovers every enabled Region (requires ec2:DescribeRegions).
+DEFAULT_ARGS=(--all-enabled-regions --days 14 --output-dir ./reports)
 
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
@@ -85,11 +86,10 @@ cat <<'EOF'
 ============================================================
  NEXT STEP — DOWNLOAD YOUR REPORT (AWS CloudShell)
 ============================================================
-The collector printed the absolute paths of the generated
-files above (after "HTML:", "QUOTAS CSV:", and "ZIP:").
+The collector printed the absolute paths of the generated files above (after "HTML:", "QUOTAS CSV:", and "ZIP:").
 
 To download them in CloudShell:
-  1. In the CloudShell menu bar, click "Actions".
+  1. In the top-right corner of the CloudShell window, click "Actions".
   2. Choose "Download file".
   3. Paste the exact path shown above for the file you want:
        - the "HTML:"       path for report.html
@@ -97,10 +97,8 @@ To download them in CloudShell:
        - the "ZIP:"        path to download everything at once.
   4. Click "Download".
 
-Then open report.html in your browser. It runs offline and
-needs no AWS credentials or web server.
+Then open report.html in your browser. It runs offline and needs no AWS credentials or web server.
 
-(On your local computer the files are already on disk at the
-paths shown above — just open the output directory.)
+(On your local computer the files are already on disk at the paths shown above — just open the output directory.)
 ============================================================
 EOF
